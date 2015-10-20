@@ -21,7 +21,7 @@ int execute_cmdtree(CMDTREE *t)
     {			// hmmmm, a that's problem
 	exitstatus	= EXIT_FAILURE;
     }
-    else {
+    else { 
         
     if(strncmp (t->argv[0] , "exit" , 4) == 0) //exit command
         {
