@@ -1,5 +1,5 @@
 #include "mysh.h"
-
+// cc -std=c99 -Wall -Werror -pedantic execute.c globals.c mysh.c parser.c
 /*
    CITS2002 Project 2 2015
    Name(s):		student-name1 (, student-name2)
