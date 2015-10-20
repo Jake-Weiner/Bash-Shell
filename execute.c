@@ -13,18 +13,17 @@
 //  THAT IT HOLDS, RETURNING THE APPROPRIATE EXIT-STATUS.
 //  READ print_cmdtree0() IN globals.c TO SEE HOW TO TRAVERSE THE COMMAND-TREE
 
-#DEFINE MAX_PATHS 10
-
 int execute_cmdtree(CMDTREE *t)
 {
     int  exitstatus;
 
-    if(t == NULL) {			// hmmmm, a that's problem
+    if(t == NULL)
+    {			// hmmmm, a that's problem
 	exitstatus	= EXIT_FAILURE;
     }
-    else {
+    else { 
         
-        if(strncmp (t->argv[0] , "exit" , 4) == 0) //exit command
+    if(strncmp (t->argv[0] , "exit" , 4) == 0) //exit command
         {
             exit(0);
         }
@@ -33,47 +32,47 @@ int execute_cmdtree(CMDTREE *t)
             
             switch (pid = fork()) {
                 case -1 :
-                    perror("fork()");     // process creation failed
+                    perror("fork() failed");     // process creation failed
                     exit(1);
                     break;
                     
                 case 0:// new child process
-
-                    if ((strchr(t->argv[0],'/')) == NULL )
+                    if(strncmp (t->argv[0] , "cd" , 2) == 0) // attempt to change directory
                     {
-                        char **parsed_paths;
-                        int index;
-                        int counterl
-                        
-                        for (int j=0 ; j<MAX_PATHS; j++)
+                        if(t->argc == 2) // default path HOME
                         {
-                            while (PATH[index]!=':')
-                            {
-                                index++;
-                            }
-                         
-                       parsed_paths[counter] = strndup(PATH,index)
-                               counter++;
+                            chdir (HOME);
+                            perror("change directory fails");
+                            exit(EXIT_FAILURE);
                         }
                         
+                     else  if(t->argc == 3 && (strchr(t->argv[0],'/')) == NULL ) // Given a path without '/'
+                        {
+                            chdir (t->argv[1]);
+                            perror("change directory fails");
+                            exit(EXIT_FAILURE);
+                        }
+                        else                     // Given a full path
+                        {
+                            chdir (t->argv[1]);
+                            perror("change directory fails");
+                            exit(EXIT_FAILURE);
+                        }
                         
-                        
-                        printf("%s",DEFAULT_PATH);
-                      // strcat(DEFAULT_PATH,"/ls");
-                        //strcat(DEFAULT_PATH,t->argv[0]);
-                       printf("%s",PATH);
-                        execv(DEFAULT_PATH,t->argv);
+                    }
+ 
+                    if ((strchr(t->argv[0],'/')) == NULL )  // normal command without '/'
+                    {
+                    execvp(t->argv[0],t->argv);
+                    exit(EXIT_FAILURE);
+                    }
+                    else                      // normal command with '/'
+                    {
+                        execv(t->argv[0],t->argv);
                         exit(EXIT_FAILURE);
                     }
-                      /*  else
-                    	{printf("this is null");
-                            execv(t->argv[0],t->argv);
-                    			exit(EXIT_FAILURE);
-                        }
-                       */
-                    break;
                     
-                default:                  // original parent process
+                  default:                  // original parent process
                     while(wait(&exitstatus) != pid);
                     
                     break;
