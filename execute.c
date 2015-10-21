@@ -94,13 +94,13 @@ void pathParser (char *string)
     const char *delimiter = ":";
     char *token;
 	token = strtok(string, delimiter);
-    int no_of_directories=0;
+    CURRENT_NO_OF_DIRECTORIES=0;
     
     while( token != NULL )
     {
-        DIRECTORIES[no_of_directories]  = token;
+        DIRECTORIES[CURRENT_NO_OF_DIRECTORIES]  = token;
                token = strtok(NULL, delimiter);
-        no_of_directories++;
+        CURRENT_NO_OF_DIRECTORIES++;
     }
 }
 
