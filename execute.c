@@ -1,5 +1,4 @@
 #include "mysh.h"
-
 /*
    CITS2002 Project 2 2015
    Name(s):		student-name1 (, student-name2)
@@ -15,7 +14,7 @@
 
 int execute_cmdtree(CMDTREE *t)
 {
-    int  exitstatus;
+    int  exitstatus =0;
 
     if(t == NULL)
     {			// hmmmm, a that's problem
@@ -25,7 +24,13 @@ int execute_cmdtree(CMDTREE *t)
         
     if(strncmp (t->argv[0] , "exit" , 4) == 0) //exit command
         {
-            exit(0);
+            if (t->argc == 1)
+            exit(exitstatus);
+            else
+            {exitstatus = atoi (t->argv[1]);
+                printf("%d",exitstatus);
+            exit(exitstatus);
+            }
         }
        
             int  pid;
@@ -37,16 +42,15 @@ int execute_cmdtree(CMDTREE *t)
                     break;
                     
                 case 0:// new child process
-                    if(strncmp (t->argv[0] , "cd" , 2) == 0) // attempt to change directory
+                    if(strncmp (t->argv[0] , "cd" , 2) == 0) // if the command is cd then follow these conditions
                     {
-                        if(t->argc == 2) // default path HOME
+                        if(t->argc == 1) // No path is specified so the directory is changed to the default path HOME
                         {
                             chdir (HOME);
                             perror("change directory fails");
                             exit(EXIT_FAILURE);
                         }
-                        
-                     else  if(t->argc == 3 && (strchr(t->argv[0],'/')) == NULL ) // Given a path without '/'
+                     else  if(t->argc == 2 && (strchr(t->argv[1],'/')) == NULL ) // Given a path without '/'
                         {
                             chdir (t->argv[1]);
                             perror("change directory fails");
@@ -58,10 +62,8 @@ int execute_cmdtree(CMDTREE *t)
                             perror("change directory fails");
                             exit(EXIT_FAILURE);
                         }
-                        
                     }
- 
-                    if ((strchr(t->argv[0],'/')) == NULL )  // normal command without '/'
+                     if ((strchr(t->argv[0],'/')) == NULL )  // normal command without '/'
                     {
                     execvp(t->argv[0],t->argv);
                     exit(EXIT_FAILURE);
@@ -78,11 +80,30 @@ int execute_cmdtree(CMDTREE *t)
                     break;
             }
             fflush(stdout);
-       
-        
+
         // normal, exit commands
 	exitstatus	= EXIT_SUCCESS;
     }
 
     return exitstatus;
 }
+
+void pathParser (char *string)
+
+{
+    const char *delimiter = ":";
+    char *token;
+	token = strtok(string, delimiter);
+    int no_of_directories=0;
+    
+    while( token != NULL )
+    {
+        DIRECTORIES[no_of_directories]  = token;
+               token = strtok(NULL, delimiter);
+        no_of_directories++;
+    }
+}
+
+
+
+
