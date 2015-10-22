@@ -81,6 +81,8 @@ extern	char	*CDPATH;
 
 extern	char	*argv0;		// The name of the shell, typically mysh
 extern	bool	interactive;	// Boolean indicating if mysh is interactive
+extern  int     CURRENT_NO_OF_DIRECTORIES;
+extern  char 	**DIRECTORIES;  // This will be where each directory is stored									after the PATH variable is parsed
 
 
 //  ----------------------------------------------------------------------

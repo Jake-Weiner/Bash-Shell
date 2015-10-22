@@ -11,6 +11,8 @@
 //  THREE INTERNAL VARIABLES (SEE mysh.h FOR EXPLANATION)
 char	*HOME, *PATH, *CDPATH;
 
+char 	**DIRECTORIES;
+int 	CURRENT_NO_OF_DIRECTORIES;
 char	*argv0		= NULL;		// the program's name
 bool	interactive	= false;
 
