@@ -15,21 +15,20 @@
 
 int execute_cmdtree(CMDTREE *t)
 {
-<<<<<<< HEAD
+
     int  exitstatus =0;
 
-=======
+
     printf("%s",PATH);
     int  exitstatus;
-    
->>>>>>> master
+
     if(t == NULL)
     {			// hmmmm, a that's problem
         exitstatus = EXIT_FAILURE;
         exit(exitstatus);
 
     }
-<<<<<<< HEAD
+
     else
     {
         
@@ -113,7 +112,6 @@ int execute_cmdtree(CMDTREE *t)
         exitstatus	= EXIT_SUCCESS;
     }
 
-=======
  
     if((strncmp (t->argv[0] , "exit" , 4) == 0)&& t->argc == 1)//exit command
         {
@@ -184,7 +182,7 @@ int execute_cmdtree(CMDTREE *t)
         
     
     
->>>>>>> master
+
     return exitstatus;
 }
 
