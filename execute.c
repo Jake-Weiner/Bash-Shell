@@ -5,7 +5,7 @@
  Student number(s):	student-number-1 (, student-number-2)
  Date:		date-of-submission
  */
-
+// cc -std=c99 -Wall -Werror -pedantic execute.c globals.c mysh.c parser.c 
 // -------------------------------------------------------------------
 
 //  THIS FUNCTION SHOULD TRAVERSE THE COMMAND-TREE and EXECUTE THE COMMANDS
