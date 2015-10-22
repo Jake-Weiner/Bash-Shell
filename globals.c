@@ -7,10 +7,12 @@
    Date:                date-of-submission
  */
 
+#define MAX_NO_OF_DIRECTORIES 10
 
 //  THREE INTERNAL VARIABLES (SEE mysh.h FOR EXPLANATION)
 char	*HOME, *PATH, *CDPATH;
-
+char 	**DIRECTORIES;
+int 	CURRENT_NO_OF_DIRECTORIES;
 char	*argv0		= NULL;		// the program's name
 bool	interactive	= false;
 
@@ -24,6 +26,7 @@ void check_allocation0(void *p, char *file, const char *func, int line)
 	exit(2);
     }
 }
+
 
 //  REPORT ANY INPUT/OUTPUT REDIRECTION ASSOCIATED WITH A COMMAND NODE
 static void print_redirection(CMDTREE *t)

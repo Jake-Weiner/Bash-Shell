@@ -20,6 +20,7 @@
 #define COMMENT_CHAR	'#'	// comment character
 #define HOME_CHAR	'~'	// home directory character
 
+
 //  ----------------------------------------------------------------------
 
 //  AN enum IN C99 'GENERATES' A SEQUENCE OF UNIQUE, ASCENDING CONSTANTS
@@ -51,7 +52,7 @@ typedef	struct ct {
 extern CMDTREE	*parse_cmdtree(FILE *);		// in parser.c
 extern void	free_cmdtree(CMDTREE *);	// in parser.c
 extern int	execute_cmdtree(CMDTREE *);	// in execute.c
-
+extern void pathParser(char *);         // in execute.c
 
 /* The global variable HOME points to a directory name stored as a
    character string. This directory name is used to indicate two things:
@@ -82,7 +83,8 @@ extern	char	*CDPATH;
 extern	char	*argv0;		// The name of the shell, typically mysh
 extern	bool	interactive;	// Boolean indicating if mysh is interactive
 
-
+extern  char 	**DIRECTORIES;  // This will be where each directory is stored									after the PATH variable is parsed
+extern  int     CURRENT_NO_OF_DIRECTORIES; // current number of directories stored 										  in the PATH variable
 //  ----------------------------------------------------------------------
 
 //  TWO FUNCTIONS THAT MAY HELP WITH DEBUGGING YOUR CODE.
