@@ -14,8 +14,7 @@
 //  READ print_cmdtree0() IN globals.c TO SEE HOW TO TRAVERSE THE COMMAND-TREE
 
 
-//  THAT IT HOLDS, RETURNING THE APPROPRIATE EXIT-STATUS.
-//  READ print_cmdtree0() IN globals.c TO SEE HOW TO TRAVERSE THE COMMAND-TREE
+
 
 
 
@@ -52,6 +51,8 @@ int execute_cmdtree(CMDTREE *t)
         exitstatus	= EXIT_FAILURE;
     }
     
+    else
+    {
     // ---------------------exit execution
     
     if(strncmp (t->argv[0] , "exit" , 4) == 0) //exit command
@@ -75,7 +76,7 @@ int execute_cmdtree(CMDTREE *t)
     {
         if(t->argc == 1) // No path is specified so the directory is changed to the default HOME directory
         {
-            chdir (HOME);
+            
             
             if (chdir (HOME) ==-1)  // print error if chdir fails
             {
@@ -98,6 +99,7 @@ int execute_cmdtree(CMDTREE *t)
         }
         exit(EXIT_SUCCESS);
     }
+    
     // ------------normal command execution
     
     int pid;
@@ -113,6 +115,12 @@ int execute_cmdtree(CMDTREE *t)
             if ((strchr(t->argv[0],'/')) == NULL )  // normal command without '/'
                 {
                     pathParser(PATH);  //parses PATH into a pointer array called DIRECTORIES
+                    
+                    for (int i=0; i<CURRENT_NO_OF_DIRECTORIES ; i++)
+					{
+                        printf("directory just checked was %s\n", DIRECTORIES[i]);
+                    }
+                    
                     for (int i=0; i<CURRENT_NO_OF_DIRECTORIES ; i++)
                     {
                         strcat(DIRECTORIES[i],"/");              // appending a back slash for every directory
@@ -121,6 +129,7 @@ int execute_cmdtree(CMDTREE *t)
                         {
                             continue;
                         }
+                        
                         break;          // stop trying once successful
                         exit(EXIT_FAILURE);
                     }
@@ -131,6 +140,7 @@ int execute_cmdtree(CMDTREE *t)
                     exit(EXIT_FAILURE);
                 }
             break;
+        
         default:					  // original parent process
             while(wait(&exitstatus) != pid); // waits for the child process to finish running;
             break;
@@ -142,7 +152,7 @@ int execute_cmdtree(CMDTREE *t)
     
     
     fflush(stdout);
-
+    }
     return exitstatus;
     
 }
