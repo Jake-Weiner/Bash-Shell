@@ -16,44 +16,22 @@
 
 //  THAT IT HOLDS, RETURNING THE APPROPRIATE EXIT-STATUS.
 //  READ print_cmdtree0() IN globals.c TO SEE HOW TO TRAVERSE THE COMMAND-TREE
+// -------------------change directory
+                                
 
-  void pathParser (char *string)
-                            
-                            {
-                                char *copy;
-                                copy = strdup(string);
-                                const char *delimiter = ":";
-                                char *token;
-                                token = strtok(string, delimiter);
-                                token = strtok(copy, delimiter);
-                                CURRENT_NO_OF_DIRECTORIES=0;
-                                
-                                DIRECTORIES = (char**)malloc(sizeof(char**) * 1);
-                                while( token != NULL )
-                                {
-                                    DIRECTORIES[CURRENT_NO_OF_DIRECTORIES]  = token;
-                                    token = strtok(NULL, delimiter);
-                                    DIRECTORIES = (char**)realloc(DIRECTORIES, sizeof(char**) * (CURRENT_NO_OF_DIRECTORIES + 1));
-                                    DIRECTORIES[CURRENT_NO_OF_DIRECTORIES] = malloc(sizeof(char) * strlen((token + 1)));
-                                    strcpy(DIRECTORIES[CURRENT_NO_OF_DIRECTORIES], token);
-                                    token = strtok(NULL, delimiter);
-                                    
-                                    CURRENT_NO_OF_DIRECTORIES++;
-                                }
-                                
-                            }
+
 
 int execute_cmdtree(CMDTREE *t)
 {
     int  exitstatus =0;
-    char *pathlist[7];
+    char *pathlist[10];
     
     if (t == NULL)
     {           // hmmmm, a that's problem
         exitstatus  = EXIT_FAILURE;
     }
-   
-    if(strcmp (t->argv[0] , "exit")== 0) //exit command
+  // --------------------------------- exit command 
+    if(strcmp (t->argv[0] , "exit")== 0) 
                {
                 if (t->argc == 1)
                 {
@@ -67,6 +45,24 @@ int execute_cmdtree(CMDTREE *t)
                     
                 }
             }
+
+// ----------------------------------- change direcotry
+            if(strcmp (t->argv[0],"cd")== 0) // if the command is cd then follow these conditions
+ {
+   if(t->argc == 1)
+   {
+    printf("dddddddddddd %s\n",getenv(HOME));
+    if(chdir(HOME) == -1)
+      {
+    perror("change directory fails");
+    exit(EXIT_FAILURE);
+      }
+   }
+   else if( t->argc ==2 && strchr(t->argv[1],'/' )== NULL)
+   {
+   }
+ } 
+             
 // ---------------------------------ls,/bin/ls
              int  pid;
 
@@ -106,25 +102,27 @@ int execute_cmdtree(CMDTREE *t)
                                         
                                     case 0:// a new child process is created
                                         printf("%s\n",getenv("PATH"));
+                                        if(PATH == NULL)
+                                        {
+                                          perror("PAth is null");
+                                          exit(EXIT_FAILURE);
+                                        }
                                         
 
                                         char *token = strtok(PATH,":");
-                                        printf("token 111 %s\n",token);
+                                        
                                         int n = 0;
                                         while(token !=NULL)
                                         {
                                           pathlist[n] = strdup(token);
                                           token = strtok(NULL,":"); 
                                           strcat(pathlist[n],"/");
-                                          strcat(pathlist[n],t->argv[0]); 
+                                          strcat(pathlist[n],t->argv[0]);
+                                          printf("%s\n",pathlist[n]);
+                                          execv(pathlist[n],t->argv);
                                           n++;
                                           
                                         } 
-                                        for(int j=0;j<6;j++)
-                                        {
-                                          printf("%s\n",pathlist[j]);
-                                          execv(pathlist[j],t->argv);
-                                        }  
                                         exit(EXIT_FAILURE); 
 
                                     default:                      // original parent process
@@ -135,51 +133,7 @@ int execute_cmdtree(CMDTREE *t)
                             }
                                 
 
-
-// -------------------change directory
-                                if(strncmp (t->argv[0] , "cd" , 2) == 0) // if the command is cd then follow these conditions
-                        {
-                switch (pid = fork()) 
-                     {
-                    case -1 :
-                        perror("fork() failed");     // process creation failed
-                        exit(1);
-                        break;
-                        
-                    case 0:// new child process
-                        
-                            if(t->argc == 1) // No path is specified so the directory is changed to the default path HOME
-                            {
-                                chdir (HOME);
-                                perror("change directory fails");
-                                exit(EXIT_FAILURE);
-                            }
-                        
-                        
                             
-                                      if (t->argc == 2) //  if an arguement is passed to the cd command
-                                    {
-                                        char *current_working_directory = (char*)malloc(sizeof(char) * 2);
-                                        strcat(current_working_directory,"./");
-                                        current_working_directory = (char *)realloc(current_working_directory,sizeof(current_working_directory) + (sizeof(char) * (strlen(t->argv[1]))));
-                                        strcat(current_working_directory,t->argv[1]);
-                                        
-                                        
-                                        if( chdir(current_working_directory) ==-1)
-                                         {  perror("ERROR");
-                                         exit(EXIT_FAILURE);
-                                         }
-                                         
-                                         default:                  // original parent process
-                                         while(wait(&exitstatus) != pid);
-                                         
-                                         break;
-                                        
-                                    }
-
-                              }
-                               
-                            }
                              fflush(stdout);
                 return exitstatus;
 }
