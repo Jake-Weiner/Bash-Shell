@@ -1,6 +1,6 @@
 PROJECT =  mysh
 HEADERS =  $(PROJECT).h
-OBJ     =  mysh.o execute.o globals.o parser.o
+OBJ     =  mysh.o  execute.o globals.o parser.o
 
 
 C99     =  cc -std=c99
