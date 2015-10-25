@@ -1,4 +1,3 @@
-
 #include "mysh.h"
 
 /*
@@ -18,23 +17,10 @@
 //  THAT IT HOLDS, RETURNING THE APPROPRIATE EXIT-STATUS.
 //  READ print_cmdtree0() IN globals.c TO SEE HOW TO TRAVERSE THE COMMAND-TREE
 // -------------------change directory
-                                
-
-
-
-int execute_cmdtree(CMDTREE *t)
+int  exitstatus =0;                            
+int do_exit(CMDTREE *t)
 {
-    int  exitstatus =0;
-    char *pathlist[10];
-    
-    if (t == NULL)
-    {           // hmmmm, a that's problem
-        exitstatus  = EXIT_FAILURE;
-    }
-  // --------------------------------- EXIT COMMAND
-    if(strcmp (t->argv[0] , "exit")== 0) 
-               {
-                if (t->argc == 1)
+   if (t->argc == 1)
                 {
                     exit(exitstatus);
                 }
@@ -45,12 +31,11 @@ int execute_cmdtree(CMDTREE *t)
                     exit(exitstatus);
                     
                 }
-            }
+                return exitstatus;
+}
 
-// ----------------------------------- change direcotry
-            if(strcmp (t->argv[0],"cd")== 0) // if the command is cd then follow these conditions
- {
-
+int do_cd(CMDTREE *t)
+{
    if(t->argc == 1)   // NO ARUGMENTS , USE HOME
    {
 
@@ -81,7 +66,7 @@ int execute_cmdtree(CMDTREE *t)
 
     if(chdir(tokencopy)!=0)
       {
-      printf("-wshell: cd: %s:%s\n",tokencopy,strerror(errno)); // ERROR MESSAGE IF CHDIR FAILS
+      printf("-mysh: cd: %s:%s\n",tokencopy,strerror(errno)); // ERROR MESSAGE IF CHDIR FAILS
       }
       token = strtok(NULL,":");
         
@@ -103,21 +88,19 @@ int execute_cmdtree(CMDTREE *t)
     strcat(useful_path,t->argv[1]); //APPEND INPUT DIRECTORY
     if (chdir(useful_path) != 0) // CHANGE DIRECTORY, IF NOT SUCCESSFUL, PRINT ERROR
     {
-       printf("-wshell: cd: %s:%s\n",useful_path,strerror(errno));
+       printf("-mysh: cd: %s:%s\n",useful_path,strerror(errno));
        free(useful_path);
     }
-
+   
  }
+ return exitstatus;
 }
-             
-// ---------------------------------ls,/bin/ls
-             int  pid;
 
-
-               if ((strchr(t->argv[0],'/')) != NULL ) // INPUT ARGUMENT DOES NOT HAVE '/'
-               {
-                         switch (pid = fork()) 
-                                 {
+int do_ls(CMDTREE *t)
+{
+  int pid;
+   switch (pid = fork()) 
+          {
                                     case -1 :
                                         perror("fork() failed");     // process creation failed
                                         exit(1);
@@ -126,17 +109,19 @@ int execute_cmdtree(CMDTREE *t)
                                     case 0:// a new child process is created
                                     execv(t->argv[0], t->argv);
                                     exit(EXIT_FAILURE);
-                                        
+
                                     default:                      // original parent process
                                         while(wait(&exitstatus) != pid); // waits for the child process to finish running;
                                         break;
-                                }
+            }
                                 fflush(stdout);
-                 }
-                                
-
-               if ((strchr(t->argv[0],'/')) == NULL && strcmp (t->argv[0],"cd")!= 0) 
-               {
+                                 return exitstatus;    
+}
+       
+int do_binls(CMDTREE *t)
+{
+       char *pathlist[10];
+       int pid;
 
                          switch (pid = fork()) 
                                  {
@@ -164,7 +149,7 @@ int execute_cmdtree(CMDTREE *t)
                                           strcat(pathlist[n],"/");   //APPEND '/' FOR THE PATH
                                           strcat(pathlist[n],t->argv[0]); // APPEND INPUT ARGUMENT FOR THE PATH
                                          // printf("%s\n",pathlist[n]);  
-                                          execv(pathlist[n],t->argv);  // EXECUTE THE SYSTEM CALL
+                                          execv(pathlist[n],t->argv); // EXECUTE THE SYSTEM CALL
                                           n++;
                                           
                                         } 
@@ -175,7 +160,44 @@ int execute_cmdtree(CMDTREE *t)
                                         break;
                                 }
                                 fflush(stdout);
-                            }                 
+                                return exitstatus;
+
+}
+int execute_cmdtree(CMDTREE *t)
+{
+    //int  exitstatus =0;
+
+    
+    if (t == NULL)
+    {           // hmmmm, a that's problem
+        exitstatus  = EXIT_FAILURE;
+    }
+  // --------------------------------- EXIT COMMAND
+    else if(strcmp (t->argv[0] , "exit")== 0) 
+            {
+               do_exit(t);
+            }
+
+// ----------------------------------- change direcotry
+          else  if(strcmp (t->argv[0],"cd")== 0) // if the command is cd then follow these conditions
+ {
+  do_cd(t);
+ }
+             
+// ---------------------------------ls,/bin/ls
+            else   if ((strchr(t->argv[0],'/')) != NULL ) // INPUT ARGUMENT DOES NOT HAVE '/'
+               {
+                do_ls(t);
+              }
+               else if ((strchr(t->argv[0],'/')) == NULL && strcmp (t->argv[0],"cd")!= 0 && strcmp (t->argv[0],"time")!= 0) 
+               {
+                do_binls(t);
+               }
+               else  // arbitrary command, print errors;
+               {
+                printf("-mysh: %s:%s\n",t->argv[0],strerror(errno));
+               }
+               
                 return exitstatus;
 }
 
