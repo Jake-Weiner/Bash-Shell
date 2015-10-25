@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <sys/time.h>
 #if defined(__linux__)
     extern	char	*strdup(const char *str);
     extern	int	fileno(const FILE *fp);

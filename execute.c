@@ -16,9 +16,10 @@
 //  READ print_cmdtree0() IN globals.c TO SEE HOW TO TRAVERSE THE COMMAND-TREE
 
 
-
-// -------------------change directory
-
+int start_time_sec ;
+int start_time_usec;
+int stop_time_sec;
+int stop_time_usec;
 
 
 int execute_cmdtree(CMDTREE *t)
@@ -30,6 +31,7 @@ int execute_cmdtree(CMDTREE *t)
     {           // hmmmm, a that's problem
         exitstatus  = EXIT_FAILURE;
     }
+    
     // --------------------------------- EXIT COMMAND
     if(strcmp (t->argv[0] , "exit")== 0)
     {
@@ -112,7 +114,64 @@ int execute_cmdtree(CMDTREE *t)
     // ---------------------------------other commands which exit on execution such as ls, cal etc...
     int  pid;	//process id
     
-    
+    if ((strcmp(t->argv[0],"time") ==0) && (t->argc >1))  //  if timing is required of a command
+        {
+            struct timeval  start_time;
+            struct timeval  stop_time;
+            long double start_time_sec ;
+            long double start_time_usec;
+            long double stop_time_sec;
+            long double stop_time_usec;
+            
+            switch (pid = fork())
+            {
+                case -1 :
+                    perror("fork() failed");     // process creation failed
+                    exit(1);
+                    break;
+                    
+                case 0:// a new child process is created
+                    gettimeofday(&start_time, NULL);
+                    start_time_sec = (long double)start_time.tv_sec;
+                    start_time_usec=(long double)start_time.tv_usec;
+                    printf("program started at %Lf %Lf\n",
+                           start_time_sec, start_time_usec);
+                    if (execv(t->argv[0], t->argv) ==0)
+                        break;
+                    
+                    exit(EXIT_FAILURE);
+                    
+                    
+                default:                      // original parent process
+                    while(wait(&exitstatus) != pid); // waits for the child process to finish running;
+                    gettimeofday(&stop_time, NULL );
+                    stop_time_sec = (long double)stop_time.tv_sec;
+                    stop_time_usec = (long double)stop_time.tv_usec;
+                    printf("program stopped at  %Lf %LF usec\n",stop_time_sec,stop_time_usec);
+                    /*printf("program stopped at %Lf %Lf\n",
+                     stop_time_sec, stop_time_usec );
+                     fprintf(stderr,"program ran for %Lf",stop_time_sec - start_time_sec + ((stop_time_usec - start_time_usec)*0.000001));
+                     */
+                    
+                    /*gettimeofday(&stop_time, NULL );
+                     
+                     
+                     stop_time_sec = (int)stop_time.tv_sec;
+                     stop_time_usec = (int)stop_time.tv_usec;
+                     
+                     printf("program stopped at %i.06%i\n",
+                     stop_time_sec, stop_time_usec );
+                     
+                     printf("%d\n",stop_time_sec);
+                     printf("%d\n",start_time_sec);
+                     printf ("%d\n",stop_time_sec - start_time_sec );
+                     printf("program ran for %i.06%i\n",stop_time_sec - start_time_sec , stop_time_usec - start_time_usec);
+                     */
+                    break;
+            }
+
+        }
+
     if ((strchr(t->argv[0],'/')) != NULL ) // input argument specifies where the command is located and contains '/'
     {
         switch (pid = fork())
@@ -177,6 +236,4 @@ int execute_cmdtree(CMDTREE *t)
     }
     return exitstatus;
 }
-
-
 
