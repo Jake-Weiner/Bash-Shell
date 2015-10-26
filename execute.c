@@ -262,7 +262,7 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
 {
        char *pathlist[10];
        int pid;
-
+	char *temparray[t->argc-1];
                          switch (pid = fork()) 
                                  {
                                     case -1 :
@@ -277,7 +277,16 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
                                           perror("Path is null");
                                           exit(EXIT_FAILURE);
                                         }
-                                        char *token = strtok(PATH,":"); //SEPERATE THE PATH VARIABLE                                        
+                                        //char *temparray[t->argc-1];
+                                        if (strcmp (t->argv[0],"time")== 0) // if the time command is required then argv needs to 									be manipulated
+                                        {
+                                            
+                                            for (int i=0; i<t->argc;i++)
+                                            {
+                                                strcpy(temparray[i],t->argv[i+1]);
+                                            }
+                                        }
+                                        char *token = strtok(PATH,":"); //SEPERATE THE PATH VARIABLE
                                         int n = 0;
                                         while(token !=NULL)
                                         {
@@ -287,8 +296,11 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
                                             printf ("argc -1 is %d\n",t->argc-1);
                                             printf("pathlist[n] is %s argv[] is %s\n",pathlist[n],t->argv[t->argc-1]);
                                           strcat(pathlist[n],t->argv[t->argc-1]); // APPEND INPUT ARGUMENT FOR THE PATH
-                                         // printf("%s\n",pathlist[n]);  
-                                          execv(pathlist[n],t->argv); // EXECUTE THE SYSTEM CALL GARY ITS THIS LINE t->argv!!!
+                                         // printf("%s\n",pathlist[n]);
+                                          if (strcmp (t->argv[0],"time")== 0)
+                                              execv(pathlist[n],temparray); // temparray is used instead of argv when time is called before
+                                          else
+                                              execv(pathlist[n],t->argv); // EXECUTE THE SYSTEM CALL
                                           n++;
                                         } 
                                         exit(EXIT_FAILURE); 
