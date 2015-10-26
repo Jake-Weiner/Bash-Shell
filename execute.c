@@ -247,7 +247,7 @@ int specifiedInternalCommand(CMDTREE *t) //specified location of internal comman
                                         break;
                                         
                                     case 0:// a new child process is created
-                                    execv(t->argv[0], t->argv);
+                                    execv(t->argv[t->argc-1], t->argv);
                                     exit(EXIT_FAILURE);
 
                                     default:                      // original parent process
@@ -284,9 +284,11 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
                                           pathlist[n] = strdup(token);   
                                           token = strtok(NULL,":"); 
                                           strcat(pathlist[n],"/");   //APPEND '/' FOR THE PATH
-                                          strcat(pathlist[n],t->argv[0]); // APPEND INPUT ARGUMENT FOR THE PATH
+                                            printf ("argc -1 is %d\n",t->argc-1);
+                                            printf("pathlist[n] is %s argv[] is %s\n",pathlist[n],t->argv[t->argc-1]);
+                                          strcat(pathlist[n],t->argv[t->argc-1]); // APPEND INPUT ARGUMENT FOR THE PATH
                                          // printf("%s\n",pathlist[n]);  
-                                          execv(pathlist[n],t->argv); // EXECUTE THE SYSTEM CALL
+                                          execv(pathlist[n],t->argv); // EXECUTE THE SYSTEM CALL GARY ITS THIS LINE t->argv!!!
                                           n++;
                                         } 
                                         exit(EXIT_FAILURE); 
