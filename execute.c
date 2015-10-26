@@ -46,6 +46,30 @@ int do_N_SEMICOLON(CMDTREE *t)
 
 }
 
+int nBackground(CMDTREE *t)
+{
+    int pid;
+	int pid2;
+    
+    switch (pid =fork())
+    {
+		case -1 :
+            perror("fork() failed");     // process creation failed
+    		return exitstatus;
+    
+		case 0  :
+    execute_cmdtree(t->left);
+	    exit(EXIT_FAILURE);
+    
+	default :
+       
+            execute_cmdtree(t->right);
+            break;
+                exit(EXIT_FAILURE);
+    }
+    return exitstatus;
+}
+
 int execute_cmdtree (CMDTREE *t)
 {
 if (t == NULL)
@@ -57,8 +81,9 @@ if (t == NULL)
   case N_AND :   // as in   cmd1 && cmd2
   break;
 
-  case N_BACKGROUND:   // as in   cmd1 &
-  break;
+  case N_BACKGROUND: // as in   cmd1 &
+        nBackground(t);
+        break;
 
   case N_OR:    // as in   cmd1 || cmd2 
   break;
@@ -243,8 +268,8 @@ int specifiedInternalCommand(CMDTREE *t) //specified location of internal comman
           {
                                     case -1 :
                                         perror("fork() failed");     // process creation failed
-                                        exit(1);
-                                        break;
+                                        exit(EXIT_FAILURE);
+                                        
                                         
                                     case 0:// a new child process is created
                                     execv(t->argv[t->argc-1], t->argv);
@@ -293,8 +318,8 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
                                           pathlist[n] = strdup(token);   
                                           token = strtok(NULL,":"); 
                                           strcat(pathlist[n],"/");   //APPEND '/' FOR THE PATH
-                                            printf ("argc -1 is %d\n",t->argc-1);
-                                            printf("pathlist[n] is %s argv[] is %s\n",pathlist[n],t->argv[t->argc-1]);
+                                           // printf ("argc -1 is %d\n",t->argc-1);
+                                          //  printf("pathlist[n] is %s argv[] is %s\n",pathlist[n],t->argv[t->argc-1]);
                                           strcat(pathlist[n],t->argv[t->argc-1]); // APPEND INPUT ARGUMENT FOR THE PATH
                                          // printf("%s\n",pathlist[n]);
                                           if (strcmp (t->argv[0],"time")== 0)
