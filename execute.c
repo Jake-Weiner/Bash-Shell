@@ -49,7 +49,7 @@ int do_N_SEMICOLON(CMDTREE *t)
 int nBackground(CMDTREE *t)
 {
     int pid;
-	int pid2;
+
     
     switch (pid =fork())
     {
