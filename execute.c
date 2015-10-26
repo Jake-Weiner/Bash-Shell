@@ -189,7 +189,7 @@ int timeCommand(CMDTREE *t)
                 start_time_usec=(long double)start_time.tv_usec;  // time in microseconds
                 printf("program started at %Lf %Lf\n",
                        start_time_sec, start_time_usec);
-                if ((strchr(t->argv[t->argc-1],'/')) == NULL ) // if the command given does not have specified location
+                if ((strchr(t->argv[1],'/')) == NULL ) // if the command given does not have specified location
                 {
                    exitstatus=unspecifiedInternalCommand(t);
                 }
@@ -284,7 +284,7 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
                                           pathlist[n] = strdup(token);   
                                           token = strtok(NULL,":"); 
                                           strcat(pathlist[n],"/");   //APPEND '/' FOR THE PATH
-                                          strcat(pathlist[n],t->argv[t->argc-1]); // APPEND INPUT ARGUMENT FOR THE PATH
+                                          strcat(pathlist[n],t->argv[0]); // APPEND INPUT ARGUMENT FOR THE PATH
                                          // printf("%s\n",pathlist[n]);  
                                           execv(pathlist[n],t->argv); // EXECUTE THE SYSTEM CALL
                                           n++;
@@ -309,27 +309,27 @@ if (t == NULL)
   // --------------------------------- EXIT COMMAND
     else if(strcmp (t->argv[0] , "exit")== 0) 
             {
-                exitCommand(t);
+                exitstatus = exitCommand(t);
             }
 
 // ----------------------------------- change directory
           else  if(strcmp (t->argv[0],"cd")== 0) // if the command is cd then follow these conditions
    {
-  cdCommand(t);
+             exitstatus =cdCommand(t);
    }
              
 // ---------------------------------ls type commands
             else   if ((strchr(t->argv[0],'/')) != NULL ) // INPUT ARGUMENT DOES NOT HAVE '/'
                {
-                specifiedInternalCommand(t);
+                exitstatus = specifiedInternalCommand(t);
               }
                else if ((strchr(t->argv[0],'/')) == NULL && strcmp (t->argv[0],"cd")!= 0 && strcmp (t->argv[0],"time")!= 0) 
                {
-                unspecifiedInternalCommand(t);
+                exitstatus =unspecifiedInternalCommand(t);
                }
                else if(strcmp (t->argv[0],"time")== 0) // time command
                {
-                timeCommand(t);
+                exitstatus = timeCommand(t);
                }
                
                 return exitstatus;
