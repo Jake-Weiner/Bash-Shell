@@ -70,6 +70,27 @@ int nBackground(CMDTREE *t)
     return exitstatus;
 }
 
+int nSubshell (CMDTREE *t)
+{
+    int pid;
+    switch (pid = fork())
+    {
+        case -1 :
+            perror("fork() failed");     // process creation failed
+    		return exitstatus;
+            
+        case 0 :
+            execute_cmdtree(t->left);
+            exit(EXIT_FAILURE);
+        default :
+            break;
+            exit(EXIT_FAILURE);
+            
+    }
+
+    return exitstatus;
+}
+
 int execute_cmdtree (CMDTREE *t)
 {
 if (t == NULL)
@@ -96,6 +117,8 @@ if (t == NULL)
   break;
 
   case N_SUBSHELL:  // as in   ( cmds )
+        
+        nSubshell(t);
   break;
 
   case N_COMMAND:
