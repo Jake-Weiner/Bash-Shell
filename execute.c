@@ -23,6 +23,12 @@ int stop_time_sec;
 int stop_time_usec;
 int  exitstatus =0;
 
+int timeCommand(CMDTREE *t);
+int exitCommand(CMDTREE *t);
+int cdCommand(CMDTREE *t);
+int specifiedInternalCommand(CMDTREE *t);    
+int unspecifiedInternalCommand(CMDTREE *t);
+
 int exitCommand(CMDTREE *t)
 {
    if (t->argc == 1)
@@ -120,16 +126,16 @@ int timeCommand(CMDTREE *t)
                 break;
                 
             case 0:// a new child process is created
-                gettimeofday(&start_time, NULL);				// gets the time that the time command is started
-                start_time_sec = (long double)start_time.tv_sec;	// time in seconds
-                start_time_usec=(long double)start_time.tv_usec;	// time in microseconds
+                gettimeofday(&start_time, NULL);        // gets the time that the time command is started
+                start_time_sec = (long double)start_time.tv_sec;  // time in seconds
+                start_time_usec=(long double)start_time.tv_usec;  // time in microseconds
                 printf("program started at %Lf %Lf\n",
                        start_time_sec, start_time_usec);
                 if ((strchr(t->argv[t->argc-1],'/')) == NULL ) // if the command given does not have specified location
                 {
                    exitstatus=unspecifiedInternalCommand(t);
                 }
-				
+        
                 else
                     exitstatus = specifiedInternalCommand(t); //  if the command given does have specified location
                
@@ -167,7 +173,7 @@ int timeCommand(CMDTREE *t)
          return exitstatus;
     }
     
-	else
+  else
         exit(EXIT_FAILURE);
     
 }
@@ -237,8 +243,8 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
                                 }
                                 fflush(stdout);
                                 return exitstatus;
-
 }
+
 int execute_cmdtree(CMDTREE *t)
 {
 
