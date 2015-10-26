@@ -28,6 +28,64 @@ int exitCommand(CMDTREE *t);
 int cdCommand(CMDTREE *t);
 int specifiedInternalCommand(CMDTREE *t);    
 int unspecifiedInternalCommand(CMDTREE *t);
+int do_N_COMMAND(CMDTREE *t);
+int do_N_SEMICOLON (CMDTREE *t);
+int do_N_AND(CMDTREE *t);
+int do_N_OR(CMDTREE *t);
+
+
+int do_N_SEMICOLON(CMDTREE *t)
+{
+  if (t == NULL)
+    {           // hmmmm, a that's problem
+        exitstatus  = EXIT_FAILURE;
+    }
+  execute_cmdtree(t->left);
+  execute_cmdtree(t->right);
+  return exitstatus;
+
+}
+
+int execute_cmdtree (CMDTREE *t)
+{
+if (t == NULL)
+    {           // hmmmm, a that's problem
+        exitstatus  = EXIT_FAILURE;
+    }
+  switch (t->type)  //EXECUTE COMMAND BASED ON DIFFERENT TYPE 
+{
+  case N_AND :   // as in   cmd1 && cmd2
+  break;
+
+  case N_BACKGROUND:   // as in   cmd1 &
+  break;
+
+  case N_OR:    // as in   cmd1 || cmd2 
+  break;
+
+  case N_SEMICOLON:    // as in   cmd1 ;  cmd2 
+  exitstatus = do_N_SEMICOLON(t);
+  break;
+
+  case N_PIPE:   // as in   cmd1 |  cmd2 
+  break;
+
+  case N_SUBSHELL:  // as in   ( cmds )
+  break;
+
+  case N_COMMAND:
+  exitstatus = do_N_COMMAND(t);
+  break;
+
+  default :
+  printf("invalid input\n");
+
+}
+
+
+    return exitstatus;
+}
+
 
 int exitCommand(CMDTREE *t)
 {
@@ -219,10 +277,7 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
                                           perror("Path is null");
                                           exit(EXIT_FAILURE);
                                         }
-                                        
-
-                                        char *token = strtok(PATH,":"); //SEPERATE THE PATH VARIABLE
-                                        
+                                        char *token = strtok(PATH,":"); //SEPERATE THE PATH VARIABLE                                        
                                         int n = 0;
                                         while(token !=NULL)
                                         {
@@ -233,7 +288,6 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
                                          // printf("%s\n",pathlist[n]);  
                                           execv(pathlist[n],t->argv); // EXECUTE THE SYSTEM CALL
                                           n++;
-                                          
                                         } 
                                         exit(EXIT_FAILURE); 
 
@@ -245,10 +299,9 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
                                 return exitstatus;
 }
 
-int execute_cmdtree(CMDTREE *t)
+int do_N_COMMAND(CMDTREE *t) // EXECUTION IF TYPE IS N_COMMAND
 {
-
-    if (t == NULL)
+if (t == NULL)
     {           // hmmmm, a that's problem
         exitstatus  = EXIT_FAILURE;
     }
@@ -261,9 +314,9 @@ int execute_cmdtree(CMDTREE *t)
 
 // ----------------------------------- change directory
           else  if(strcmp (t->argv[0],"cd")== 0) // if the command is cd then follow these conditions
- {
+   {
   cdCommand(t);
- }
+   }
              
 // ---------------------------------ls type commands
             else   if ((strchr(t->argv[0],'/')) != NULL ) // INPUT ARGUMENT DOES NOT HAVE '/'
@@ -281,5 +334,4 @@ int execute_cmdtree(CMDTREE *t)
                
                 return exitstatus;
 }
-
 
