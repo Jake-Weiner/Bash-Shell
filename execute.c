@@ -40,17 +40,48 @@ int do_N_SEMICOLON(CMDTREE *t)
     {           // hmmmm, a that's problem
         exitstatus  = EXIT_FAILURE;
     }
-  execute_cmdtree(t->left);
-  execute_cmdtree(t->right);
+  exitstatus = execute_cmdtree(t->left);  //DO THE COMMAND FROM LEFT TO RIGHT RESPECTIVELY
+  exitstatus = execute_cmdtree(t->right);
   return exitstatus;
 
 }
 
-int nBackground(CMDTREE *t)
+int do_N_AND(CMDTREE *t)
+{
+  if(t ==NULL)
+  {
+    exitstatus = EXIT_FAILURE;
+  }
+  else if(execute_cmdtree(t->left) == 0)  // IF LEFT IS SUCCESSFUL THEN DO RIGHT
+  {
+    exitstatus = execute_cmdtree(t->right);
+  }
+  else 
+    exitstatus = EXIT_FAILURE;  //OTHERWISE EXIT FAILURE
+  return exitstatus;
+  }
+
+int do_N_OR(CMDTREE *t)
+{
+
+ if(t ==NULL)
+  {
+    exitstatus = EXIT_FAILURE;
+  }
+  else if(execute_cmdtree(t->left) != 0)  //IF LEFT FAILS THEN DO RIGHT
+  {
+    exitstatus = execute_cmdtree(t->right);
+  }
+  else
+    exitstatus = EXIT_SUCCESS;  //OTHERWISE EXIT SUCCESS
+  return exitstatus;
+
+}
+
+
+int do_N_BACKGROUND(CMDTREE *t)
 {
     int pid;
-
-    
     switch (pid =fork())
     {
 		case -1 :
@@ -58,19 +89,19 @@ int nBackground(CMDTREE *t)
     		return exitstatus;
     
 		case 0  :
-    execute_cmdtree(t->left);
+        exitstatus = execute_cmdtree(t->left);
 	    exit(EXIT_FAILURE);
     
 	default :
        
-            execute_cmdtree(t->right);
+            exitstatus = execute_cmdtree(t->right);
             break;
                 exit(EXIT_FAILURE);
     }
     return exitstatus;
 }
 
-int nSubshell (CMDTREE *t)
+int do_N_SUBSHELL (CMDTREE *t)
 {
     int pid;
     switch (pid = fork())
@@ -80,8 +111,8 @@ int nSubshell (CMDTREE *t)
     		return exitstatus;
             
         case 0 :
-            execute_cmdtree(t->left);
-            exit(EXIT_FAILURE);
+            exitstatus = execute_cmdtree(t->left);
+            exit(exitstatus);
         default :
             break;
             exit(EXIT_FAILURE);
@@ -103,7 +134,7 @@ if (t == NULL)
   break;
 
   case N_BACKGROUND: // as in   cmd1 &
-        nBackground(t);
+        do_N_BACKGROUND(t);
         break;
 
   case N_OR:    // as in   cmd1 || cmd2 
@@ -121,7 +152,11 @@ if (t == NULL)
 
   case N_SUBSHELL:  // as in   ( cmds )
         
-     exitstatus = nSubshell(t);
+
+     exitstatus = do_N_SUBSHELL(t);
+
+
+
   break;
 
   case N_COMMAND:
@@ -130,6 +165,7 @@ if (t == NULL)
 
   default :
   printf("invalid input\n");
+  exit(exitstatus);
 
 }
 
