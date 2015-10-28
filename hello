@@ -1,0 +1,18 @@
+Makefile
+execute.c
+execute.o
+globals.c
+globals.o
+hello
+hello3
+mysh
+mysh.c
+mysh.h
+mysh.o
+parser.c
+parser.o
+path-parser.c
+
+mysh.2 /Users/weiner103/documents/cits2002/Project2/Cits2002-Project2
+
+mysh.2 

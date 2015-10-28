@@ -26,8 +26,8 @@ int  exitstatus =0;
 int timeCommand(CMDTREE *t);
 int exitCommand(CMDTREE *t);
 int cdCommand(CMDTREE *t);
-int specifiedInternalCommand(CMDTREE *t);    
-int unspecifiedInternalCommand(CMDTREE *t);
+int specifiedInternalCommand(char **latest_argv);
+int unspecifiedInternalCommand(char **latest_argv);
 int do_N_COMMAND(CMDTREE *t);
 int do_N_SEMICOLON (CMDTREE *t);
 int do_N_AND(CMDTREE *t);
@@ -112,13 +112,16 @@ if (t == NULL)
   case N_SEMICOLON:    // as in   cmd1 ;  cmd2 
   exitstatus = do_N_SEMICOLON(t);
   break;
+        
+        
 
   case N_PIPE:   // as in   cmd1 |  cmd2 
   break;
+        
 
   case N_SUBSHELL:  // as in   ( cmds )
         
-        nSubshell(t);
+     exitstatus = nSubshell(t);
   break;
 
   case N_COMMAND:
@@ -215,14 +218,21 @@ int cdCommand(CMDTREE *t)
 
 int timeCommand(CMDTREE *t)
 {
-    if (t->argc >1)  //  if timing is required of a command
+    char **tempargv;   // a temporary argv is created and is passed to as the arguments to internal command functions
+	tempargv = (char**)malloc(sizeof(char**));
+    for (int i=0; i<t->argc ; i++)
     {
+        tempargv[i] = t->argv[i+1];
+        tempargv = (char**)realloc(tempargv, sizeof(char*));
+        printf ( "tempargv[%d] is now %s\n", i, tempargv[i]);
+    }
         struct timeval  start_time;
         struct timeval  stop_time;
         long double start_time_sec ;
         long double start_time_usec;
         long double stop_time_sec;
         long double stop_time_usec;
+        
         int pid;
         switch (pid = fork())
         {
@@ -239,18 +249,21 @@ int timeCommand(CMDTREE *t)
                        start_time_sec, start_time_usec);
                 if ((strchr(t->argv[1],'/')) == NULL ) // if the command given does not have specified location
                 {
-                   exitstatus=unspecifiedInternalCommand(t);
+                    
+                   exitstatus=unspecifiedInternalCommand(tempargv);
                 }
         
                 else
-                    exitstatus = specifiedInternalCommand(t); //  if the command given does have specified location
+                    exitstatus = specifiedInternalCommand(tempargv); //  if the command given does have specified location
                
                
                 exit(EXIT_FAILURE);
                 
                 
             default:                      // original parent process
+                sleep(1);
                 while(wait(&exitstatus) != pid); // waits for the child process to finish running;
+                
                 gettimeofday(&stop_time, NULL );
                 stop_time_sec = (long double)stop_time.tv_sec;
                 stop_time_usec = (long double)stop_time.tv_usec;
@@ -277,15 +290,14 @@ int timeCommand(CMDTREE *t)
                 break;
         }
          return exitstatus;
-    }
-    
-  else
+   
         exit(EXIT_FAILURE);
     
 }
 
-int specifiedInternalCommand(CMDTREE *t) //specified location of internal command such as ls
+int specifiedInternalCommand(char **latest_argv) //specified location of internal command such as ls
 {
+	
    int pid;
    switch (pid = fork())
           {
@@ -295,7 +307,7 @@ int specifiedInternalCommand(CMDTREE *t) //specified location of internal comman
                                         
                                         
                                     case 0:// a new child process is created
-                                    execv(t->argv[t->argc-1], t->argv);
+                                    execv(latest_argv[0],latest_argv);
                                     exit(EXIT_FAILURE);
 
                                     default:                      // original parent process
@@ -306,11 +318,11 @@ int specifiedInternalCommand(CMDTREE *t) //specified location of internal comman
                                  return exitstatus;    
 }
        
-int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal command such as ls
+int unspecifiedInternalCommand(char **latest_argv) //unspecified location of internal command such as ls
 {
        char *pathlist[10];
        int pid;
-	char *temparray[t->argc-1];
+  
                          switch (pid = fork()) 
                                  {
                                     case -1 :
@@ -319,20 +331,10 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
                                         break;
                                         
                                     case 0:// a new child process is created
-                                         // printf("%s\n",getenv("PATH"));
                                         if(PATH == NULL)
                                         {
                                           perror("Path is null");
                                           exit(EXIT_FAILURE);
-                                        }
-                                        //char *temparray[t->argc-1];
-                                        if (strcmp (t->argv[0],"time")== 0) // if the time command is required then argv needs to 									be manipulated
-                                        {
-                                            
-                                            for (int i=0; i<t->argc;i++)
-                                            {
-                                                strcpy(temparray[i],t->argv[i+1]);
-                                            }
                                         }
                                         char *token = strtok(PATH,":"); //SEPERATE THE PATH VARIABLE
                                         int n = 0;
@@ -341,14 +343,8 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
                                           pathlist[n] = strdup(token);   
                                           token = strtok(NULL,":"); 
                                           strcat(pathlist[n],"/");   //APPEND '/' FOR THE PATH
-                                           // printf ("argc -1 is %d\n",t->argc-1);
-                                          //  printf("pathlist[n] is %s argv[] is %s\n",pathlist[n],t->argv[t->argc-1]);
-                                          strcat(pathlist[n],t->argv[t->argc-1]); // APPEND INPUT ARGUMENT FOR THE PATH
-                                         // printf("%s\n",pathlist[n]);
-                                          if (strcmp (t->argv[0],"time")== 0)
-                                              execv(pathlist[n],temparray); // temparray is used instead of argv when time is called before
-                                          else
-                                              execv(pathlist[n],t->argv); // EXECUTE THE SYSTEM CALL
+                                          strcat(pathlist[n],latest_argv[0]); // APPEND INPUT ARGUMENT FOR THE PATH
+                                          execv(pathlist[n],latest_argv); // EXECUTE THE SYSTEM CALL
                                           n++;
                                         } 
                                         exit(EXIT_FAILURE); 
@@ -363,37 +359,59 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
 
 int do_N_COMMAND(CMDTREE *t) // EXECUTION IF TYPE IS N_COMMAND
 {
-if (t == NULL)
-    {           // hmmmm, a that's problem
-        exitstatus  = EXIT_FAILURE;
-    }
+    int fd;
+
+       if (t->infile != NULL )  // the infile is used as the input instead of stdin
+       {
+                fd = open(t-> infile, O_RDONLY);
+                dup2(fd, 0);
+                close (fd);
+       }
     
-  // --------------------------------- EXIT COMMAND
-    else if(strcmp (t->argv[0] , "exit")== 0) 
+        if ((t->outfile != NULL) && (t->append == false ))  // the outfile is used as the output instead of stdout
+        {
+            fd = open(t-> outfile, O_WRONLY | O_TRUNC | O_CLOEXEC |O_CREAT, S_IWUSR |S_IRUSR | S_IXUSR);
+            printf("open return value is %d\n" , fd);
+            dup2(fd,1);
+            close(fd);
+        }
+    
+    	if ((t->outfile != NULL) && (t->append == true))
+        {
+            fd = open(t-> outfile, O_WRONLY |O_APPEND|O_CREAT, S_IWUSR |S_IRUSR | S_IXUSR);
+            printf("open return value is %d\n" , fd);
+            dup2(fd,1);
+            close(fd);
+        }
+            
+            if(strcmp (t->argv[0] , "exit")== 0)
             {
                 exitstatus = exitCommand(t);
             }
-
-// ----------------------------------- change directory
-          else  if(strcmp (t->argv[0],"cd")== 0) // if the command is cd then follow these conditions
-   {
-             exitstatus =cdCommand(t);
-   }
-             
-// ---------------------------------ls type commands
-            else   if ((strchr(t->argv[0],'/')) != NULL ) // INPUT ARGUMENT DOES NOT HAVE '/'
-               {
-                exitstatus = specifiedInternalCommand(t);
-              }
-               else if ((strchr(t->argv[0],'/')) == NULL && strcmp (t->argv[0],"cd")!= 0 && strcmp (t->argv[0],"time")!= 0) 
-               {
-                exitstatus =unspecifiedInternalCommand(t);
-               }
-               else if(strcmp (t->argv[0],"time")== 0) // time command
-               {
+            // ----------------------------------- change directory
+            else  if(strcmp (t->argv[0],"cd")== 0) // if the command is cd then follow these conditions
+            {
+                exitstatus =cdCommand(t);
+            }
+            
+            // ---------------------------------ls type commands
+            else   if ((strchr(t->argv[0],'/')) != NULL ) // INPUT ARGUMENT HAS '/'
+            {
+                exitstatus = specifiedInternalCommand(t->argv);
+            }
+            else if ((strchr(t->argv[0],'/')) == NULL && strcmp (t->argv[0],"cd")!= 0 && strcmp (t->argv[0],"time")!= 0)
+            {
+                exitstatus =unspecifiedInternalCommand(t->argv);
+            }
+            else if(strcmp (t->argv[0],"time")== 0) // time command
+            {
+            
                 exitstatus = timeCommand(t);
-               }
-               
-                return exitstatus;
+            }
+        
+
+            return exitstatus;
+    exit(EXIT_FAILURE);
+    
 }
 

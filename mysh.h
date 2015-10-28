@@ -5,6 +5,9 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #if defined(__linux__)
     extern	char	*strdup(const char *str);
     extern	int	fileno(const FILE *fp);
@@ -52,8 +55,8 @@ typedef	struct ct {
 extern CMDTREE	*parse_cmdtree(FILE *);		// in parser.c
 extern void	free_cmdtree(CMDTREE *);	// in parser.c
 extern int	execute_cmdtree(CMDTREE *);	// in execute.c
-extern int specifiedInternalCommand(CMDTREE *);
-extern int unspecifiedInternalCommand(CMDTREE *);
+extern int specifiedInternalCommand(char **);
+extern int unspecifiedInternalCommand(char **);
 extern int timeCommand(CMDTREE *t);
 
 /* The global variable HOME points to a directory name stored as a
