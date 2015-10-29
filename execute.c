@@ -18,23 +18,7 @@
 //  READ print_cmdtree0() IN globals.c TO SEE HOW TO TRAVERSE THE COMMAND-TREE
 // -------------------change directory
 
-int  exitstatus = 0;
-
-int timeCommand(CMDTREE *t);
-int exitCommand(CMDTREE *t);
-int cdCommand(CMDTREE *t);
-int specifiedInternalCommand(CMDTREE *t);    
-int unspecifiedInternalCommand(CMDTREE *t);
-int reset_variable(CMDTREE *t);
-int do_N_COMMAND(CMDTREE *t);
-int do_N_SEMICOLON (CMDTREE *t);
-int do_N_AND(CMDTREE *t);
-int do_N_OR(CMDTREE *t);
-int do_N_PIPE(CMDTREE *t);
-int do_N_SUBSHELL(CMDTREE *t);
-int do_N_BACKGROUND(CMDTREE *t);
-
-
+int exitstatus = 0;
 
 int execute_cmdtree (CMDTREE *t)
 {
@@ -204,7 +188,6 @@ int do_N_SUBSHELL (CMDTREE *t)
         default :
             break;
             exit(EXIT_FAILURE);
-            
     }
 
     return exitstatus;
@@ -566,3 +549,5 @@ int reset_variable(CMDTREE *t)
     }
                 return exitstatus;
 }
+
+
