@@ -23,8 +23,8 @@ int  exitstatus = 0;
 int timeCommand(CMDTREE *t);
 int exitCommand(CMDTREE *t);
 int cdCommand(CMDTREE *t);
-int specifiedInternalCommand(char **latest_argv);    
-int unspecifiedInternalCommand(char **latest_argv);
+int specifiedInternalCommand(CMDTREE *t);    
+int unspecifiedInternalCommand(CMDTREE *t);
 int do_N_COMMAND(CMDTREE *t);
 int do_N_SEMICOLON (CMDTREE *t);
 int do_N_AND(CMDTREE *t);
@@ -126,21 +126,21 @@ int do_N_SUBSHELL (CMDTREE *t)
 int do_N_PIPE(CMDTREE *t)
 {
 
- int pid;
- int pid2;
- int pipefd[2];
+ int pid;   //FIRST CMD
+ int pid2; // SECOND CMD
+ int pipefd[2]; //ONE PIPE
 
 
     switch (pid = fork())
     {
         case -1 :
-            perror("fork() failed");     // process creation failed
+            perror("fork() failed");     // PROCESS CREATION FAILS
         return exitstatus;
             
         case 0 :     // CHILD PROCESS
          if (pipe(pipefd) == -1)
         {
-        perror("pipe");
+        perror("pipe failed\n");
         exit(EXIT_FAILURE);
         }
 
@@ -338,43 +338,21 @@ int timeCommand(CMDTREE *t)
                 if ((strchr(t->argv[1],'/')) == NULL ) // if the command given does not have specified location
                 {
                     
-                   exitstatus = unspecifiedInternalCommand(tempargv);
+                   exitstatus = unspecifiedInternalCommand(t);
                 }
         
                 else
                 {
-                    exitstatus = specifiedInternalCommand(tempargv); //  if the command given does have specified location
+                    exitstatus = specifiedInternalCommand(t); //  if the command given does have specified location
                 }  
                gettimeofday(&stop_time, NULL);
                 stop_time_sec = stop_time.tv_sec;
                 stop_time_usec = stop_time.tv_usec;
                 printf("program used  %d ms\n" ,(stop_time_sec - start_time_sec) *1000 + (stop_time_usec -start_time_usec)/1000);
-                exit(EXIT_FAILURE);
-                
-                
+                exit(EXIT_FAILURE);           
             default:                      // original parent process
                 
                 while(wait(&exitstatus) != pid); // waits for the child process to finish running;
-                
-        
-                /*printf("program stopped at %Lf %Lf\n",
-                 stop_time_sec, stop_time_usec );
-                 fprintf(stderr,"program ran for %Lf",stop_time_sec - start_time_sec + ((stop_time_usec - start_time_usec)*0.000001));
-                 */
-                
-                /*gettimeofday(&stop_time, NULL );
-                 
-                 
-                 stop_time_sec = (int)stop_time.tv_sec;
-                 stop_time_usec = (int)stop_time.tv_usec;
-                 
-                 printf("program stopped at %i.06%i\n",
-                 stop_time_sec, stop_time_usec );
-                 
-                 printf("%d\n",stop_time_sec);
-                 printf("%d\n",start_time_sec);
-                 */
-                 
                 break;
         }
          return exitstatus;
@@ -383,7 +361,7 @@ int timeCommand(CMDTREE *t)
     
 }
          
-int specifiedInternalCommand(char **latest_argv) //specified location of internal command such as ls
+int specifiedInternalCommand(CMDTREE *t) //specified location of internal command such as ls
 {
   
    int pid;
@@ -395,7 +373,7 @@ int specifiedInternalCommand(char **latest_argv) //specified location of interna
                                         
                                         
                                     case 0:// a new child process is created
-                                    execv(latest_argv[0],latest_argv);
+                                    execv(t->argv[0],t->argv);
                                     exit(EXIT_FAILURE);
 
                                     default:                      // original parent process
@@ -406,7 +384,7 @@ int specifiedInternalCommand(char **latest_argv) //specified location of interna
                                  return exitstatus;    
 }
        
-int unspecifiedInternalCommand(char **latest_argv) //unspecified location of internal command such as ls
+int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal command such as ls
 {
        char *pathlist[10];
        int pid;
@@ -431,8 +409,8 @@ int unspecifiedInternalCommand(char **latest_argv) //unspecified location of int
                                           pathlist[n] = strdup(token);   
                                           token = strtok(NULL,":"); 
                                           strcat(pathlist[n],"/");   //APPEND '/' FOR THE PATH
-                                          strcat(pathlist[n],latest_argv[0]); // APPEND INPUT ARGUMENT FOR THE PATH
-                                          execv(pathlist[n],latest_argv); // EXECUTE THE SYSTEM CALL
+                                          strcat(pathlist[n],t->argv[0]); // APPEND INPUT ARGUMENT FOR THE PATH
+                                          execv(pathlist[n],t->argv); // EXECUTE THE SYSTEM CALL
                                           n++;
                                         } 
                                         exit(EXIT_FAILURE); 
@@ -445,33 +423,39 @@ int unspecifiedInternalCommand(char **latest_argv) //unspecified location of int
                                 return exitstatus;
 }
 
+int setargument(CMDTREE *t)
+{
+  if(strcmp(t->argv[1],"PATH") == 0)
+    {
+      realloc(PATH,sizeof(char) *strlen(t->argv[2]) +1);
+      strcpy(PATH,t->argv[2]);
+      printf("PATH after set %s\n",PATH);
+    }
+            
+  else if(strcmp(t->argv[1],"CDPATH" )== 0)
+    {
+      realloc(CDPATH,sizeof(char) *strlen(t->argv[2]) +1);
+      strcpy(CDPATH,t->argv[2]);
+      printf("CDPATH after set %s\n",CDPATH);
+    }
+  else if(strcmp(t->argv[1],"HOME" )==0)
+    {
+      realloc(HOME,sizeof(char) *strlen(t->argv[2]) +1);
+      strcpy(HOME,t->argv[2]);
+      printf("HOME after set %s\n",HOME);
+    }
+   else
+    {
+      fprintf(stderr, "invaild input");
+      exitstatus = EXIT_FAILURE;
+    }
+                return exitstatus;
+}
+
+
 int do_N_COMMAND(CMDTREE *t) // EXECUTION IF TYPE IS N_COMMAND
 {
-    int fd;
 
-       if (t->infile != NULL )  // the infile is used as the input instead of stdin
-       {
-                fd = open(t-> infile, O_RDONLY);
-                dup2(fd, 0);
-                close (fd);
-       }
-    
-        if ((t->outfile != NULL) && (t->append == false ))  // the outfile is used as the output instead of stdout
-        {
-            fd = open(t-> outfile, O_WRONLY | O_TRUNC | O_CLOEXEC |O_CREAT, S_IWUSR |S_IRUSR | S_IXUSR);
-            printf("open return value is %d\n" , fd);
-            dup2(fd,1);
-            close(fd);
-        }
-    
-      if ((t->outfile != NULL) && (t->append == true))
-        {
-            fd = open(t-> outfile, O_WRONLY |O_APPEND|O_CREAT, S_IWUSR |S_IRUSR | S_IXUSR);
-            printf("open return value is %d\n" , fd);
-            dup2(fd,1);
-            close(fd);
-        }
-            
             if(strcmp (t->argv[0] , "exit")== 0)
             {
                 exitstatus = exitCommand(t);
@@ -485,20 +469,32 @@ int do_N_COMMAND(CMDTREE *t) // EXECUTION IF TYPE IS N_COMMAND
             // ---------------------------------ls type commands
             else   if ((strchr(t->argv[0],'/')) != NULL ) // INPUT ARGUMENT HAS '/'
             {
-                exitstatus = specifiedInternalCommand(t->argv);
+                exitstatus = specifiedInternalCommand(t);
             }
-            else if ((strchr(t->argv[0],'/')) == NULL && strcmp (t->argv[0],"cd")!= 0 && strcmp (t->argv[0],"time")!= 0)
+            else if ((strchr(t->argv[0],'/')) == NULL && strcmp (t->argv[0],"cd")!= 0 && strcmp (t->argv[0],"time")!= 0 && strcmp(t->argv[0],"set")!= 0)
             {
-                exitstatus =unspecifiedInternalCommand(t->argv);
+
+                exitstatus =unspecifiedInternalCommand(t);
+                if((exitstatus = unspecifiedInternalCommand(t)) != 0)
+                {
+                  fprintf(stderr, "-mysh: %s:command not found\n", t->argv[0]);
+                }
             }
             else if(strcmp (t->argv[0],"time")== 0) // time command
             {
             
                 exitstatus = timeCommand(t);
             }
-        
 
-            return exitstatus;
-    exit(EXIT_FAILURE);
+            else if (strcmp(t->argv[0] , "set" ) == 0 && t->argc == 3) //SET ARGUMENTS
+
+              {
+
+               exitstatus = setargument(t);
+              }
+
+          
+              return exitstatus;
+              exit(EXIT_FAILURE);
 }
 
