@@ -17,71 +17,61 @@
 //  THAT IT HOLDS, RETURNING THE APPROPRIATE EXIT-STATUS.
 //  READ print_cmdtree0() IN globals.c TO SEE HOW TO TRAVERSE THE COMMAND-TREE
 // -------------------change directory
+int timeCommand(CMDTREE *t);
+int exitCommand(CMDTREE *t);
+int cdCommand(CMDTREE *t);
+int reset_variable(CMDTREE *t);
+int specifiedInternalCommand(CMDTREE *t);    
+int unspecifiedInternalCommand(CMDTREE *t);
+int do_N_COMMAND(CMDTREE *t);
+int do_N_SEMICOLON (CMDTREE *t);
+int do_N_AND(CMDTREE *t);
+int do_N_OR(CMDTREE *t);
+int do_N_PIPE(CMDTREE *t);
+int do_N_SUBSHELL(CMDTREE *t);
+int do_N_BACKGROUND(CMDTREE *t);
 
-int exitstatus = 0;
 
-int execute_cmdtree (CMDTREE *t)
+int do_N_SEMICOLON(CMDTREE *t)
 {
-if (t == NULL)
-    {           // hmmmm, a that's problem
+  if (t == NULL)
+    {
+        // hmmmm, a that's problem
         exitstatus  = EXIT_FAILURE;
     }
-  switch (t->type)  //EXECUTE COMMAND BASED ON DIFFERENT TYPE 
-{
-  case N_AND :   // as in   cmd1 && cmd2
-  exitstatus = do_N_AND(t);
-  break;
+  exitstatus = execute_cmdtree(t->left);  //DO THE COMMAND FROM LEFT TO RIGHT RESPECTIVELY
+  exitstatus = execute_cmdtree(t->right);
+  return exitstatus;
 
-  case N_BACKGROUND:   // as in   cmd1 &
-  exitstatus = do_N_BACKGROUND(t);
-  break;
-
-  case N_OR:    // as in   cmd1 || cmd2
-  exitstatus = do_N_OR(t); 
-  
-  break;
-
-  case N_SEMICOLON:    // as in   cmd1 ;  cmd2 
-  exitstatus = do_N_SEMICOLON(t);
-  break;
-
-  case N_PIPE:   // as in   cmd1 |  cmd2 
-  exitstatus = do_N_PIPE (t);
-  break;
-
-  case N_SUBSHELL:  // as in   ( cmds )
-  exitstatus = do_N_SUBSHELL(t);
-  break;
-
-  case N_COMMAND:
-  exitstatus = do_N_COMMAND(t);
-  break;
-
-  default :
-  printf("invalid input\n");
-  exit(EXIT_FAILURE);
 }
-    return exitstatus;
-}
-
 int do_N_COMMAND(CMDTREE *t) // EXECUTION IF TYPE IS N_COMMAND
 {
-
-            if(strcmp (t->argv[0] , "exit")== 0)
-            {
-                exitstatus = exitCommand(t);
-            }
-            // ----------------------------------- change directory
-            else  if(strcmp (t->argv[0],"cd")== 0) // if the command is cd then follow these conditions
-            {
-                exitstatus =cdCommand(t);
-            }
-            else if(strcmp (t->argv[0],"time")== 0) // time command
-            {
-                exitstatus = timeCommand(t);
-            }
-
-            else if (strcmp(t->argv[0] , "set" ) == 0) //reset variable 
+    if(strcmp (t->argv[0] , "exit")== 0)
+    {
+        exitCommand(t);
+    }
+    
+    // ----------------------------------- change directory command
+    
+    else  if(strcmp (t->argv[0],"cd")== 0)
+    {
+        exitstatus = cdCommand(t);
+    }
+    
+    // ---------------------------------ls type commands
+    
+    else if ((strchr(t->argv[0],'/')) != NULL ) // input argument has a specified path e.g /bin/ls
+    {
+        exitstatus = specifiedInternalCommand(t);
+    }
+    // ---------------------------------time command
+   
+    else if(strcmp (t->argv[0],"time")== 0)
+    {
+        exitstatus = timeCommand(t);
+    }
+    
+    else if (strcmp(t->argv[0] , "set" ) == 0) //reset variable 
 
               {
                 if(t->argc == 3)  // the number of arguments needs to be 3
@@ -94,12 +84,8 @@ int do_N_COMMAND(CMDTREE *t) // EXECUTION IF TYPE IS N_COMMAND
                   exitstatus = EXIT_FAILURE;
                 }   
               } 
-            // ---------------------------------ls type commands
-            else   if ((strchr(t->argv[0],'/')) != NULL ) // INPUT ARGUMENT HAS '/'
-            {
-                exitstatus = specifiedInternalCommand(t);
-            }
-            else if ((strchr(t->argv[0],'/')) == NULL && strcmp (t->argv[0],"cd")!= 0 && strcmp (t->argv[0],"time")!= 0 && strcmp(t->argv[0],"set")!= 0) 
+              
+     else if ((strchr(t->argv[0],'/')) == NULL && strcmp (t->argv[0],"cd")!= 0 && strcmp (t->argv[0],"time")!= 0 && strcmp(t->argv[0],"set")!= 0) 
             {
 
                 if((exitstatus = unspecifiedInternalCommand(t)) != 0) // making sure junk input is reported
@@ -107,19 +93,7 @@ int do_N_COMMAND(CMDTREE *t) // EXECUTION IF TYPE IS N_COMMAND
                   fprintf(stderr, "-mysh: %s:command not found\n", t->argv[0]);
                 }
             }
-              return exitstatus;
-              exit(EXIT_FAILURE);
-}
-
-int do_N_SEMICOLON(CMDTREE *t)
-{
-  if (t == NULL)
-    {           // hmmmm, a that's problem
-        exitstatus  = EXIT_FAILURE;
-    }
-  exitstatus = execute_cmdtree(t->left);  //execute commands from left to right respectively
-  exitstatus = execute_cmdtree(t->right);
-  return exitstatus;
+                return exitstatus;
 }
 
 int do_N_AND(CMDTREE *t)
@@ -128,240 +102,288 @@ int do_N_AND(CMDTREE *t)
   {
     exitstatus = EXIT_FAILURE;
   }
-  else if(execute_cmdtree(t->left) == 0)  // if left is successsful, then do right 
+  else if(execute_cmdtree(t->left) == EXIT_SUCCESS)  // IF LEFT IS SUCCESSFUL THEN DO RIGHT
   {
     exitstatus = execute_cmdtree(t->right);
   }
+  else 
+  exitstatus = EXIT_FAILURE;  //OTHERWISE EXIT FAILURE
   return exitstatus;
   }
 
 int do_N_OR(CMDTREE *t)
 {
-
+    
  if(t ==NULL)
   {
     exitstatus = EXIT_FAILURE;
   }
-  else if(execute_cmdtree(t->left) != 0)  //if left execution fails then executes right 
+  else if(execute_cmdtree(t->left) == EXIT_FAILURE)  //IF LEFT FAILS THEN DO RIGHT
   {
     exitstatus = execute_cmdtree(t->right);
   }
+  else
+    exitstatus = EXIT_SUCCESS;  //OTHERWISE EXIT SUCCESS
   return exitstatus;
 
-}
-
-int do_N_BACKGROUND(CMDTREE *t)
-{
-    int pid;
-  
-    
-    switch (pid =fork())
-    {
-    case -1 :
-            perror("fork() failed");     // process creation failed
-        return exitstatus;
-    
-    case 0  :
-    exitstatus = execute_cmdtree(t->left); //left is executed in the background
-    exit(exitstatus);
-    return exitstatus;
-    
-  default :
-            exitstatus = execute_cmdtree(t->right); 
-            break;
-    }
-    return exitstatus;
-}
-
-int do_N_SUBSHELL (CMDTREE *t)
-{
-    int pid;
-    switch (pid = fork())
-    {
-        case -1 :
-            perror("fork() failed");     // process creation failed
-        return exitstatus;
-            
-        case 0 :
-            exitstatus = execute_cmdtree(t->left);
-            exit(exitstatus);
-        default :
-            break;
-            exit(EXIT_FAILURE);
-    }
-
-    return exitstatus;
 }
 
 int do_N_PIPE(CMDTREE *t)
 {
-
- int pid;   //FIRST CMD
- int pid2; // SECOND CMD
- int pipefd[2]; //ONE PIPE
-
-
+    
+    int pid;   //FIRST CMD
+    int pid2; // SECOND CMD
+    int pipefd[2]; //ONE PIPE
+    
+    
     switch (pid = fork())
     {
         case -1 :
-            perror("fork() failed");     // PROCESS CREATION FAILS
-            exit(EXIT_FAILURE);
-        return exitstatus;
+            perror("fork() failed");     // process creation failed
+            return exitstatus;
             
-        case 0 :     // cmd 1
-         if (pipe(pipefd) == -1) //pipe fails
+        case 0 :     // CHILD PROCESS
+            if (pipe(pipefd) == -1)
+            {
+                perror("pipe failed\n");
+                exit(EXIT_FAILURE);
+            }
+            
+            switch(pid2 = fork())
         {
-        perror("pipe failed\n");
-        exit(EXIT_FAILURE);
+            case -1 :
+                perror("fork() failed");
+                return exitstatus;
+                
+            case 0:
+                close(pipefd[1]);
+                //close(STDIN_FILENO);
+                dup2(pipefd[0],STDIN_FILENO);
+                close(pipefd[0]);
+                exitstatus = execute_cmdtree(t->right);
+                exit(EXIT_FAILURE);
+                
+            default :
+                close(pipefd[0]);
+                dup2(pipefd[1],STDOUT_FILENO);
+                // out end of the pipe is connnected to the stdout of cmd1
+                exitstatus = execute_cmdtree(t->left);
+                exit(EXIT_SUCCESS);
+                //while(wait(&exitstatus) != pid2);
+                break;
         }
-
-        switch(pid2 = fork()) //fork another time for cmd 2
-        {
-          case -1 :
-          perror("fork() failed");
-          return exitstatus;
-
-          case 0: //cmd 2
-          close(pipefd[1]);
-          dup2(pipefd[0],STDIN_FILENO);
-          close(pipefd[0]);
-          exitstatus = execute_cmdtree(t->right);
-          exit(EXIT_FAILURE);
-
-          default :  //cmd 1
-        close(pipefd[0]);
-        dup2(pipefd[1],STDOUT_FILENO); // out end of the pipe is connnected to the stdout of cmd1 
-        exitstatus = execute_cmdtree(t->left);
-        exit(EXIT_FAILURE);
-          break;
-        }
-         
-        default : 
-         while(wait(&exitstatus) != pid); // parent waits for the child process to finish running;   
-        break;
-        exit(EXIT_FAILURE);           
-    } 
-  return exitstatus;
+            
+        default :
+            
+            while(wait(&exitstatus) != pid); // waits for the child process to finish running;   
+            break;
+            exit(EXIT_FAILURE);           
+    }
+    
+    exitstatus= EXIT_FAILURE;
+    return exitstatus;
 }
 
-int exitCommand(CMDTREE *t)
+int do_N_BACKGROUND(CMDTREE *t)  // the command on the right of the & will be executed without waiting for the first command to be finished executing
+{
+    int pid;
+    switch (pid =fork())
+    {
+		case -1 :
+            perror("fork() failed");     // process creation failed
+    		exitstatus=EXIT_FAILURE;
+            return exitstatus;
+    
+		case 0  :
+        exitstatus = execute_cmdtree(t->left);
+	    exit(EXIT_FAILURE);
+    
+	default :
+       
+            exitstatus = execute_cmdtree(t->right);
+            break;
+            exit(EXIT_FAILURE);
+    }
+       return exitstatus;
+}
+
+int do_N_SUBSHELL (CMDTREE *t) // a subshell is created when a command is placed within (   ) e.g (ls)
+{
+    int pid;
+    switch (pid = fork())
+    {
+        case -1 :
+            perror("fork() failed");     // process creation failed
+    		exitstatus=EXIT_FAILURE;
+            return exitstatus;
+        case 0 :
+            exitstatus = execute_cmdtree(t->left);
+            break;
+        default :
+            break;
+            exit(EXIT_FAILURE);
+    }
+    return exitstatus;
+}
+
+int execute_cmdtree (CMDTREE *t)
+{
+    if (t == NULL)
+        {           // hmmmm, a that's problem
+            exitstatus  = EXIT_FAILURE;
+        }
+    switch (t->type)  //commands are executed depending on the nodetype/s that are in the input
+    	{
+          case N_AND :   // as in   cmd1 && cmd2
+          exitstatus= do_N_AND(t);
+          break;
+
+          case N_BACKGROUND: // as in   cmd1 &
+          exitstatus = do_N_BACKGROUND(t);
+          break;
+
+          case N_OR:    // as in   cmd1 || cmd2
+          exitstatus = do_N_OR(t);
+          break;
+
+          case N_SEMICOLON:    // as in   cmd1 ;  cmd2 
+          exitstatus = do_N_SEMICOLON(t);
+          break;
+
+          case N_PIPE:   // as in   cmd1 |  cmd2
+          exitstatus = do_N_PIPE(t);
+          break;
+
+          case N_SUBSHELL:  // as in   ( cmds )
+          exitstatus = do_N_SUBSHELL(t);
+          break;
+          
+          case N_COMMAND:
+          exitstatus = do_N_COMMAND(t);
+          break;
+
+          default :
+          printf("invalid input\n");
+          exit(EXIT_FAILURE);
+        }
+    return exitstatus;
+}
+
+void exitCommand(CMDTREE *t)
 {
    if (t->argc == 1)
-                {
-                    exit(0);
-                }
-                else  
-                {
-                    exitstatus = atoi (t->argv[1]);  // user input exit status number
-                    printf("exit %d\n",exitstatus);
-                    exit(exitstatus);
-                }
-                return exitstatus;
+       {
+        exit(EXIT_SUCCESS);
+       }
+   else
+       {
+        exitstatus = atoi (t->argv[1]);  // user input defines the exitstatus e.g exit 3
+        printf("%d",exitstatus);
+        exit(exitstatus);
+       }
 }
 
 int cdCommand(CMDTREE *t)
 {
-   if(t->argc == 1)   // no arguments except "cd", use HOME
+   if(t->argc == 1)   // no input arguments, change to the HOME directory
    {
-
-    if(chdir(HOME) == -1)
-      {
-    perror("change directory fails");
-    exit(EXIT_FAILURE);
-      }
+        if(chdir(HOME) == -1)
+          {
+        perror("change directory fails");
+        exit(EXIT_FAILURE);
+          }
    }
-   else if( t->argc == 2 && strchr(t->argv[1],'/' )== NULL) //input argument does not have "/"
+    
+   else if( t->argc ==2 && strchr(t->argv[1],'/' )== NULL) //input argument doesnt have a '/'
    {
-    //printf("the CDPATH is %s\n",getenv(CDPATH));
     char *tokencopy;
     char *token = strtok(CDPATH,":");
-    //printf("fisrt token is %s\n",token);
     while(token != NULL)
     {
-       tokencopy = malloc(sizeof(char) *(strlen(t->argv[1]) + strlen(token)) +1);
-       strcpy(tokencopy,token);
-      //printf("first token copy is %s\n",tokencopy);
-       strcat(tokencopy,"/");
-      //printf("after strcat1 is %s\n",tokencopy);
-       strcat(tokencopy,t->argv[1]);
-       //printf("after strcat2 is %s\n",tokencopy);
-
-    if(chdir(tokencopy)!=0)
-      {
-      printf("-mysh: cd: %s:%s\n",tokencopy,strerror(errno)); // error message if chdir fails
-      }
-      token = strtok(NULL,":");    
+      tokencopy = malloc(sizeof(char) *(strlen(t->argv[1]) + strlen(token)) +1);
+      strcpy(tokencopy,token);
+      strcat(tokencopy,"/");
+      strcat(tokencopy,t->argv[1]);
+    
+      if(chdir(tokencopy)!=0)
+         {
+           printf("-mysh: cd: %s:%s\n",tokencopy,strerror(errno)); // ERROR MESSAGE IF CHDIR FAILS
+         }
+      token = strtok(NULL,":");
+        
     }
     free(token);
-    free(tokencopy); 
+    free(tokencopy);
    }
  
-  else if(t->argc ==2 && strchr(t->argv[1],'/' )!= NULL)  //input argumennts has '/'
+  else if(t->argc ==2 && strchr(t->argv[1],'/' )!= NULL)  //INPUT ARGUMENT HAS  '/'
         {
             char *useful_path= NULL;
-            useful_path = malloc(sizeof(char) * strlen(t->argv[1]) + 3); // initialize a space for PATH to be put in 
+            useful_path = malloc(sizeof(char) * strlen(t->argv[1]) + 3); // INITIALIZE A SPACE FOR THE PATH TO BE PUT IN
             if (useful_path == NULL)
             {
                 printf("cd: malloc failed");
             }
-            strcpy(useful_path,"./");  //copy current directory in a space
-            strcat(useful_path,t->argv[1]); //append input directory
-            if (chdir(useful_path) != 0) // change direcotry, if not successful, print error
+            strcpy(useful_path,"./");  // COPY CURRENT DIRECTORY INTO THE SPACE
+            strcat(useful_path,t->argv[1]); //APPEND INPUT DIRECTORY
+            if (chdir(useful_path) != 0) // CHANGE DIRECTORY, IF NOT SUCCESSFUL, PRINT ERROR
             {
                 printf("-mysh: cd: %s:%s\n",useful_path,strerror(errno));
-                
+                free(useful_path);
             }
-            free(useful_path);
         }
- return exitstatus;
+   return exitstatus;
 }
 
 int timeCommand(CMDTREE *t)
 {
-        struct timeval  start_time;
-        struct timeval  stop_time;
-        int start_time_sec ;
-        int start_time_usec;
-        int stop_time_sec;
-        int stop_time_usec;
+  
+        struct timeval start_time;
+        struct timeval stop_time;
+        int start_time_sec,stop_time_sec;
+        int start_time_usec,stop_time_usec;
         int pid;
-
+    
         switch (pid = fork())
         {
             case -1 :
                 perror("fork() failed");     // process creation failed
-                exit(1);
+                exit(EXIT_FAILURE);
                 break;
                 
             case 0:// a new child process is created
-                gettimeofday(&start_time, NULL);        // gets the time that the time command is started
-                start_time_sec = start_time.tv_sec;  // time in seconds
-                start_time_usec= start_time.tv_usec;  // time in microseconds
-                printf("program started at %d %d\n",start_time_sec, start_time_usec);
-                if ((strchr(t->argv[1],'/')) == NULL ) // if the command given does not have specified location
+                t->argv++;	// moves argv so that argv[0] is now the command that is to be timed
+                t->argc--;
+                gettimeofday(&start_time, NULL);     // gets the time that the time command is started
+                start_time_sec = start_time.tv_sec;  // start time in seconds
+                start_time_usec=start_time.tv_usec;  // start time in microseconds
+                
+                if ((strchr(t->argv[0],'/')) == NULL) // if the command given does not have specified location
                 {
-                    
-                   exitstatus = unspecifiedInternalCommand(t);
+                    exitstatus=unspecifiedInternalCommand(t);
                 }
-        
                 else
                 {
                     exitstatus = specifiedInternalCommand(t); //  if the command given does have specified location
-                }  
-               gettimeofday(&stop_time, NULL);
+                }
+                
+                gettimeofday(&stop_time, NULL);
                 stop_time_sec = stop_time.tv_sec;
                 stop_time_usec = stop_time.tv_usec;
-                printf("program used  %d msec\n" ,(stop_time_sec - start_time_sec) *1000 + (stop_time_usec -start_time_usec)/1000);
-                exit(EXIT_FAILURE);           
+                 printf("program ran for  %d msec\n" ,(stop_time_sec - start_time_sec) *1000 + (stop_time_usec -start_time_usec)/1000);
+                t->argv--;
+                t->argc++;
+                break;
+                exit(EXIT_FAILURE);
+
             default:                      // original parent process
+                
                 while(wait(&exitstatus) != pid); // waits for the child process to finish running;
                 break;
         }
          return exitstatus;
-        exit(EXIT_FAILURE);
-    
 }
-         
+
 int specifiedInternalCommand(CMDTREE *t) //specified location of internal command such as /bin/ls
 {
    int pid;
@@ -372,7 +394,7 @@ int specifiedInternalCommand(CMDTREE *t) //specified location of internal comman
     perror("fork() failed");     // process creation failed
     exit(EXIT_FAILURE);
     
-  case 0:// a new child process is created
+	case 0:// a new child process is created
           
       if (t->infile != NULL )  // the infile is used as the input instead of stdin
       {
@@ -381,7 +403,7 @@ int specifiedInternalCommand(CMDTREE *t) //specified location of internal comman
               perror ("file opened");  // error message for opening file
           dup2(fd, 0);
           if (close (fd) == -1)
-              perror ("file closed");   // error message for closing file-descriptor
+              perror ("file closed");		// error message for closing file-descriptor
       }
       
       if ((t->outfile != NULL) && (t->append == false ))  // the outfile is used as the output instead of stdout
@@ -391,7 +413,7 @@ int specifiedInternalCommand(CMDTREE *t) //specified location of internal comman
               perror ("file opened");  // error message for opening file
           dup2(fd,1);
           if (close(fd) ==-1)
-              perror ("file closed");   // error message for closing file-descriptor
+              perror ("file closed");		// error message for closing file-descriptor
       }
       
       if ((t->outfile != NULL) && (t->append == true))
@@ -401,7 +423,7 @@ int specifiedInternalCommand(CMDTREE *t) //specified location of internal comman
               perror ("file opened");  // error message for opening file
           dup2(fd,1);
           if (close(fd) ==-1)
-              perror ("file closed");   // error message for closing file-descriptor
+              perror ("file closed");		// error message for closing file-descriptor
       }
       
       if (access(t->argv[0], F_OK | R_OK | X_OK)==0)
@@ -412,7 +434,7 @@ int specifiedInternalCommand(CMDTREE *t) //specified location of internal comman
           FILE *fp =fopen(t->argv[0],"r");
           while(!feof(fp))
           {
-              CMDTREE *t1 = parse_cmdtree(fp);
+              CMDTREE	*t1 = parse_cmdtree(fp);
               if(t1 != NULL)
               {
                   exitstatus = execute_cmdtree(t1);
@@ -429,16 +451,17 @@ int specifiedInternalCommand(CMDTREE *t) //specified location of internal comman
       break;
    }
     fflush(stdout);
-  //  printf("exitstatus is %d\n", exitstatus);
+    printf("exitstatus is %d\n", exitstatus);
     return exitstatus;
 }
-       
+
 int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal command such as ls
 {
        char *pathlist[10]; // need to change this
        int pid;
        int fd;
 
+   
     switch (pid = fork())
     {
         case -1 :
@@ -454,7 +477,7 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
                     perror ("file opened");  // error message for opening file
                 dup2(fd, 0);
                 if (close (fd) == -1)
-                    perror ("file closed");   // error message for closing file-descriptor
+                    perror ("file closed");		// error message for closing file-descriptor
             }
             
             if ((t->outfile != NULL) && (t->append == false ))  // the outfile is used as the output instead of stdout
@@ -464,7 +487,7 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
                     perror ("file opened");  // error message for opening file
                 dup2(fd,1);
                 if (close(fd) ==-1)
-                    perror ("file closed");   // error message for closing file-descriptor
+                    perror ("file closed");		// error message for closing file-descriptor
             }
             
             if ((t->outfile != NULL) && (t->append == true))
@@ -474,7 +497,7 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
                     perror ("file opened");  // error message for opening file
                 dup2(fd,1);
                 if (close(fd) ==-1)
-                    perror ("file closed");   // error message for closing file-descriptor
+                    perror ("file closed");		// error message for closing file-descriptor
             }
          
             if(PATH == NULL)
@@ -497,7 +520,7 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
                     FILE *fp =fopen(pathlist[n],"r");
                     while(!feof(fp))
                     {
-                    CMDTREE *t1 = parse_cmdtree(fp);
+                    CMDTREE	*t1 = parse_cmdtree(fp);
                     if(t1 != NULL)
                         {
                             print_cmdtree(t1);
@@ -509,6 +532,7 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
                 }
                 n++;
             }
+            perror("mysh command error");
             exitstatus = EXIT_FAILURE;
             exit(EXIT_FAILURE);
             
@@ -517,7 +541,7 @@ int unspecifiedInternalCommand(CMDTREE *t) //unspecified location of internal co
             break;
     }
         fflush(stdout);
-     // printf("exitstatus is %d\n", exitstatus);
+    	printf("exitstatus is %d\n", exitstatus);
         return exitstatus;
 }
 
@@ -549,5 +573,3 @@ int reset_variable(CMDTREE *t)
     }
                 return exitstatus;
 }
-
-
