@@ -17,11 +17,8 @@
 //  THAT IT HOLDS, RETURNING THE APPROPRIATE EXIT-STATUS.
 //  READ print_cmdtree0() IN globals.c TO SEE HOW TO TRAVERSE THE COMMAND-TREE
 // -------------------change directory
-int start_time_sec ;
-int start_time_usec;
-int stop_time_sec;
-int stop_time_usec;
-int  exitstatus =0;
+
+int  exitstatus = 0;
 
 int timeCommand(CMDTREE *t);
 int exitCommand(CMDTREE *t);
@@ -130,6 +127,7 @@ int do_N_PIPE(CMDTREE *t)
 {
 
  int pid;
+ int pid2;
  int pipefd[2];
 
 
@@ -140,34 +138,44 @@ int do_N_PIPE(CMDTREE *t)
         return exitstatus;
             
         case 0 :     // CHILD PROCESS
-        if (pipe(pipefd) == -1)
-         {
+         if (pipe(pipefd) == -1)
+        {
         perror("pipe");
         exit(EXIT_FAILURE);
         }
 
-        dup2(pipefd[1],STDOUT_FILENO);
-        close(pipefd[1]);
-        close(pipefd[0]);
-         // out end of the pipe is connnected to the stdout of cmd1 
-        //exitstatus = execute_cmdtree(t->left);
-        execvp(t->argv[0],t->argv);
-        exit(EXIT_FAILURE);
+        switch(pid2 = fork())
+        {
+          case -1 :
+          perror("fork() failed");
+          return exitstatus;
 
-        default :
-         
+          case 0:
+          close(pipefd[1]);
+          //close(STDIN_FILENO);
+          dup2(pipefd[0],STDIN_FILENO);
+          close(pipefd[0]);
+          exitstatus = execute_cmdtree(t->right);
+          exit(EXIT_FAILURE);
+
+          default :
         close(pipefd[0]);
-        close(pipefd[1]); 
+        dup2(pipefd[1],STDOUT_FILENO);
+         // out end of the pipe is connnected to the stdout of cmd1 
+        exitstatus = execute_cmdtree(t->left);
+        exit(EXIT_SUCCESS);
+          //while(wait(&exitstatus) != pid2); 
+          break;
+        }
+         
+        default :
         
-        // in end of the pipe is connnected to the stdout of cmd1 
-        while(wait(&exitstatus) != pid); // waits for the child process to finish running;      
-        
+         while(wait(&exitstatus) != pid); // waits for the child process to finish running;   
         break;
         exit(EXIT_FAILURE);           
     }
-    //exitstatus = execute_cmdtree(t->right);
-    execvp(t->argv[0],t->argv);
-    exit(EXIT_FAILURE);    
+   
+      
   return exitstatus;
 }
 
